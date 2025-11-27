@@ -1,0 +1,80 @@
+Build a complete Loan Approval Prediction System with the following specifications:
+
+PROJECT STRUCTURE:
+Create this exact structure:
+- app.py (Flask/FastAPI main application)
+- models/loan_model.py (ML model training and prediction)
+- models/preprocessor.py (data preprocessing)
+- models/trained_models/ (saved models directory)
+- data/loan_dataset.csv (500-1000 sample records)
+- templates/index.html (main prediction form)
+- templates/dashboard.html (model metrics dashboard)
+- static/css/style.css (modern styling)
+- static/js/main.js (frontend logic)
+- utils/data_loader.py, utils/validators.py
+- tests/ (test files)
+- requirements.txt, README.md
+
+MACHINE LEARNING:
+- Train multiple models: Logistic Regression, Random Forest, XGBoost
+- Features: Gender, Married, Dependents, Education, Self_Employed, ApplicantIncome, CoapplicantIncome, LoanAmount, Loan_Amount_Term, Credit_History, Property_Area
+- Target: Loan_Status (Y/N)
+- Save models with joblib
+- Display: accuracy, precision, recall, F1-score, confusion matrix, ROC curve
+- Feature importance visualization
+
+WEB APPLICATION:
+- Backend: Flask or FastAPI with these endpoints:
+  * POST /predict - accepts JSON with all features, returns prediction + probability
+  * GET /model/performance - returns model metrics
+  * GET /model/info - returns feature importance
+  * GET /health - health check
+- Frontend: Modern responsive UI with:
+  * Loan application form (all input fields with validation)
+  * Real-time prediction display
+  * Probability visualization (progress bars, charts)
+  * Model dashboard with metrics and visualizations
+  * Use Bootstrap or Tailwind CSS for styling
+  * Chart.js or Plotly for charts
+
+DATA:
+- Create realistic loan_dataset.csv with columns: Loan_ID, Gender, Married, Dependents, Education, Self_Employed, ApplicantIncome, CoapplicantIncome, LoanAmount, Loan_Amount_Term, Credit_History, Property_Area, Loan_Status
+- Handle missing values, encode categoricals, scale features
+- Validate all user inputs
+
+CODE QUALITY:
+- PEP 8 compliant
+- Type hints for all functions
+- Docstrings for all functions/classes
+- Comprehensive error handling
+- Logging throughout
+- Unit tests (70%+ coverage)
+
+UI/UX:
+- Professional design (blues/greens for approval, reds for rejection)
+- Mobile responsive
+- Loading indicators
+- Clear error messages
+- Success notifications
+- Interactive charts
+
+DELIVERABLES:
+1. Complete working application
+2. Trained models with >75% accuracy
+3. Sample dataset
+4. All tests passing
+5. Comprehensive README with setup instructions
+
+IMPLEMENTATION ORDER:
+1. Create project structure and requirements.txt
+2. Generate sample dataset
+3. Build preprocessing pipeline
+4. Train and save models
+5. Create API endpoints
+6. Build frontend UI
+7. Add visualizations
+8. Write tests
+9. Create documentation
+
+Start building now - create all files, implement all features, make it production-ready!
+

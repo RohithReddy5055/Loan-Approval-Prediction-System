@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h2>User Profile</h2>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>Account Information</h4>
+                    <p><strong>Name:</strong> {{ user.name }}</p>
+                    <p><strong>Email:</strong> {{ user.email }}</p>
+                    <p><strong>Account Type:</strong> {{ user.role|title }}</p>
+                    <p><strong>Member Since:</strong> {{ user.date_created.strftime('%B %d, %Y') }}</p>
+                    
+                    <div class="mt-4">
+                        <a href="{{ url_for('auth.change_password') }}" class="btn btn-primary">
+                            Change Password
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h4>Account Activity</h4>
+                    <p><strong>Last Login:</strong> {{ user.last_login.strftime('%B %d, %Y %I:%M %p') if user.last_login else 'First login' }}</p>
+                    
+                    {% if user.applications %}
+                        <h5 class="mt-4">Your Loan Applications</h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for app in user.applications|sort(attribute='created_at', reverse=true) %}
+                                    <tr>
+                                        <td>{{ app.id }}</td>
+                                        <td>{{ app.loan_type|title }}</td>
+                                        <td>${{ "%.2f"|format(app.amount) }}</td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if app.status == 'approved' %}bg-success
+                                                {% elif app.status == 'rejected' %}bg-danger
+                                                {% else %}bg-warning{% endif %}">
+                                                {{ app.status|title }}
+                                            </span>
+                                        </td>
+                                        <td>{{ app.created_at.strftime('%Y-%m-%d') }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p>No loan applications found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Dashboard - Loan Approval Prediction</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-university me-2"></i>Loan Approval Prediction
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Predict</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/dashboard">Dashboard</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2 class="mb-4"><i class="fas fa-chart-line me-2"></i>Model Performance Dashboard</h2>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading dashboard data...</p>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboardContent" style="display: none;">
+            <!-- Best Model Info -->
+            <div class="card mb-4 shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-trophy me-2"></i>Best Model: <span id="bestModelName"></span></h4>
+                </div>
+            </div>
+
+            <!-- Metrics Cards -->
+            <div class="row mb-4" id="metricsCards"></div>
+
+            <!-- Loan Prediction Status Summary -->
+            <div class="row mb-4" id="statusSummaryCards"></div>
+
+            <!-- Status & Loan Type Overview -->
+            <div class="row mb-4">
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <div class="card shadow h-100">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Status Distribution</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="statusDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <div class="card shadow h-100">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-layer-group me-2"></i>Loan Type Distribution</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="loanTypeDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card shadow h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-layer-group me-2"></i>Loan Type vs Status</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="loanTypeStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loan Amount Insights -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow h-100">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0"><i class="fas fa-signal me-2"></i>Average Loan Amount by Type</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="loanAmountByTypeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Demographics -->
+            <div class="row mb-4">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <div class="card shadow h-100">
+                        <div class="card-header text-white" style="background:#d63384;">
+                            <h5 class="mb-0"><i class="fas fa-venus-mars me-2"></i>Gender Distribution</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="genderDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card shadow h-100">
+                        <div class="card-header bg-dark text-white">
+                            <h5 class="mb-0"><i class="fas fa-briefcase me-2"></i>Employment Type Distribution</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="employmentDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Health -->
+            <div class="row mb-4">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <div class="card shadow h-100">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-rupee-sign me-2"></i>Income Distribution</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="incomeDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card shadow h-100">
+                        <div class="card-header text-white" style="background:#6610f2;">
+                            <h5 class="mb-0"><i class="fas fa-id-card me-2"></i>Credit Score Distribution</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="creditScoreDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk & Correlation -->
+            <div class="row mb-4">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <div class="card shadow h-100">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-balance-scale me-2"></i>Approval Rate by Loan Type</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="approvalRateByTypeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card shadow h-100">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Income vs Loan Amount</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="incomeVsLoanScatterChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confusion Matrices -->
+            <div class="row mb-4" id="confusionMatrices"></div>
+        </div>
+
+        <!-- Error Alert -->
+        <div id="errorAlert" class="alert alert-danger" style="display: none;" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span id="errorMessage"></span>
+        </div>
+    </div>
+
+    <footer class="bg-light text-center py-3 mt-5">
+        <div class="container">
+            <p class="mb-0 text-muted">&copy; 2025 Loan Approval Prediction System</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
+

@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Loan Applications</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-cog me-2"></i>Admin Panel
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/"><i class="fas fa-home me-1"></i>Home</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4 mb-5">
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-lg">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0"><i class="fas fa-list me-2"></i>All Loan Applications</h3>
+                        <div>
+                            <select id="filterType" class="form-select form-select-sm d-inline-block w-auto">
+                                <option value="">All Types</option>
+                                <option value="education">Education</option>
+                                <option value="home">Home</option>
+                                <option value="car">Car</option>
+                                <option value="personal">Personal</option>
+                                <option value="business">Business</option>
+                            </select>
+                            <button class="btn btn-sm btn-light ms-2" onclick="loadApplications()">
+                                <i class="fas fa-sync-alt me-1"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="loadingIndicator" class="text-center py-5" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading applications...</p>
+                        </div>
+                        <div id="applicationsTable" class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Application ID</th>
+                                        <th>Loan Type</th>
+                                        <th>Applicant Name</th>
+                                        <th>Loan Amount</th>
+                                        <th>EMI</th>
+                                        <th>Status</th>
+                                        <th>Submitted At</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="applicationsTableBody">
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted">Loading applications...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="emptyState" class="text-center py-5" style="display: none;">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No applications found.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Details Modal -->
+    <div class="modal fade" id="applicationModal" tabindex="-1" aria-labelledby="applicationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="applicationModalLabel">
+                        <i class="fas fa-file-alt me-2"></i>Application Details
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="applicationDetails">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading application details...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function loadApplications() {
+            const filterType = document.getElementById('filterType').value;
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const tableBody = document.getElementById('applicationsTableBody');
+            const emptyState = document.getElementById('emptyState');
+
+            loadingIndicator.style.display = 'block';
+            document.getElementById('applicationsTable').style.display = 'none';
+            emptyState.style.display = 'none';
+
+            let url = '/api/applications';
+            if (filterType) {
+                url += `?type=${filterType}`;
+            }
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    loadingIndicator.style.display = 'none';
+
+                    if (data.success && data.applications && data.applications.length > 0) {
+                        tableBody.innerHTML = data.applications.map(app => {
+                            const submittedDate = new Date(app.submitted_at).toLocaleString();
+                            const emiInfo = app.emi_info || {};
+                            const loanTypeNames = {
+                                'education': 'Education',
+                                'home': 'Home',
+                                'car': 'Car',
+                                'personal': 'Personal',
+                                'business': 'Business'
+                            };
+                            
+                            return `
+                                <tr>
+                                    <td><small>${app.application_id.substring(0, 8)}...</small></td>
+                                    <td><span class="badge bg-primary">${loanTypeNames[app.loan_type] || app.loan_type}</span></td>
+                                    <td>${app.full_name || app.owner_name || 'N/A'}</td>
+                                    <td>₹${(app.loan_amount_required || 0).toLocaleString('en-IN')}</td>
+                                    <td>${emiInfo.emi ? '₹' + emiInfo.emi.toLocaleString('en-IN') : 'N/A'}</td>
+                                    <td><span class="badge bg-${app.status === 'approved' ? 'success' : app.status === 'rejected' ? 'danger' : 'warning'}">${app.status || 'pending'}</span></td>
+                                    <td><small>${submittedDate}</small></td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="viewApplication('${app.application_id}')" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            ${app.status === 'pending' ? `
+                                            <button class="btn btn-sm btn-outline-success" onclick="approveApplication('${app.application_id}')" title="Approve">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="rejectApplication('${app.application_id}')" title="Reject">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                            ` : ''}
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteApplication('${app.application_id}')" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('');
+                        document.getElementById('applicationsTable').style.display = 'block';
+                    } else {
+                        emptyState.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loadingIndicator.style.display = 'none';
+                    tableBody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">Error loading applications: ${error.message}</td></tr>`;
+                    document.getElementById('applicationsTable').style.display = 'block';
+                });
+        }
+
+        function formatFieldName(fieldName) {
+            // Convert snake_case to Title Case
+            return fieldName
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        }
+
+        function formatValue(value) {
+            if (value === null || value === undefined || value === '') {
+                return '<span class="text-muted">N/A</span>';
+            }
+            if (typeof value === 'boolean') {
+                return value ? 'Yes' : 'No';
+            }
+            if (typeof value === 'number') {
+                if (value >= 1000) {
+                    return '₹' + value.toLocaleString('en-IN');
+                }
+                return value.toString();
+            }
+            return value;
+        }
+
+        function formatApplicationDetails(app) {
+            const loanTypeNames = {
+                'education': 'Education Loan',
+                'home': 'Home Loan',
+                'car': 'Car Loan',
+                'personal': 'Personal Loan',
+                'business': 'Business Loan'
+            };
+
+            const statusColors = {
+                'pending': 'warning',
+                'approved': 'success',
+                'rejected': 'danger'
+            };
+
+            let html = `
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0"><span class="badge bg-${statusColors[app.status] || 'secondary'}">${(app.status || 'pending').toUpperCase()}</span></h6>
+                        <small class="text-muted">ID: ${app.application_id}</small>
+                    </div>
+                    <h5 class="mb-3">${loanTypeNames[app.loan_type] || app.loan_type}</h5>
+                </div>
+            `;
+
+            // Group fields by category
+            const categories = {
+                'Personal Information': ['full_name', 'owner_name', 'age', 'date_of_birth', 'gender', 'marital_status', 'phone_number', 'phone', 'email'],
+                'Employment Details': ['employment_type', 'company_business_name', 'work_experience', 'annual_income', 'monthly_income'],
+                'Academic Details': ['course_name', 'course_duration', 'institution_name', 'institution_type', 'admission_proof_filename'],
+                'Property Details': ['property_type', 'property_location', 'property_value', 'ownership_type', 'builder_name'],
+                'Vehicle Details': ['car_type', 'brand', 'model', 'car_price', 'registration_city'],
+                'Business Details': ['business_name', 'business_type', 'business_age', 'annual_turnover', 'gst_number', 'business_address'],
+                'Financial Details': ['applicant_annual_income', 'parent_guardian_income', 'co_applicant_income', 'co_borrower_name', 'co_borrower_occupation', 'co_borrower_annual_income', 'down_payment_amount', 'down_payment', 'existing_loan', 'existing_emi', 'existing_loans', 'credit_score', 'collateral'],
+                'Loan Details': ['loan_amount_required', 'loan_tenure', 'repayment_period', 'loan_purpose', 'purpose'],
+                'EMI Information': ['emi_info'],
+                'Metadata': ['application_id', 'loan_type', 'submitted_at', 'status', 'updated_at']
+            };
+
+            // Fields to exclude from display
+            const excludeFields = ['application_id', 'loan_type', 'submitted_at', 'status', 'updated_at', 'emi_info'];
+
+            // Display each category
+            for (const [categoryName, fields] of Object.entries(categories)) {
+                if (categoryName === 'Metadata') continue; // Skip metadata category
+                
+                const categoryFields = fields.filter(field => app.hasOwnProperty(field) && !excludeFields.includes(field));
+                
+                if (categoryFields.length > 0) {
+                    html += `
+                        <div class="mb-4">
+                            <h6 class="text-primary border-bottom pb-2 mb-3">
+                                <i class="fas fa-${categoryName === 'Personal Information' ? 'user' : categoryName === 'Employment Details' ? 'briefcase' : categoryName === 'Academic Details' ? 'graduation-cap' : categoryName === 'Property Details' ? 'building' : categoryName === 'Vehicle Details' ? 'car' : categoryName === 'Business Details' ? 'briefcase' : categoryName === 'Financial Details' ? 'rupee-sign' : 'file-invoice-dollar'} me-2"></i>
+                                ${categoryName}
+                            </h6>
+                            <div class="row">
+                    `;
+                    
+                    categoryFields.forEach(field => {
+                        const value = app[field];
+                        if (value !== null && value !== undefined && value !== '') {
+                            html += `
+                                <div class="col-md-6 mb-2">
+                                    <strong>${formatFieldName(field)}:</strong> ${formatValue(value)}
+                                </div>
+                            `;
+                        }
+                    });
+                    
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            // EMI Information
+            if (app.emi_info) {
+                const emi = app.emi_info;
+                html += `
+                    <div class="mb-4">
+                        <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <i class="fas fa-calculator me-2"></i>EMI Information
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <strong>Monthly EMI:</strong> ₹${emi.emi ? emi.emi.toLocaleString('en-IN') : 'N/A'}
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <strong>Interest Rate:</strong> ${emi.interest_rate ? emi.interest_rate + '% p.a.' : 'N/A'}
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <strong>Total Amount:</strong> ₹${emi.total_amount ? emi.total_amount.toLocaleString('en-IN') : 'N/A'}
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <strong>Total Interest:</strong> ₹${emi.total_interest ? emi.total_interest.toLocaleString('en-IN') : 'N/A'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Metadata
+            html += `
+                <div class="mt-4 pt-3 border-top">
+                    <small class="text-muted">
+                        <strong>Submitted:</strong> ${new Date(app.submitted_at).toLocaleString()}<br>
+                        ${app.updated_at ? `<strong>Updated:</strong> ${new Date(app.updated_at).toLocaleString()}` : ''}
+                    </small>
+                </div>
+            `;
+
+            return html;
+        }
+
+        function viewApplication(applicationId) {
+            const modal = new bootstrap.Modal(document.getElementById('applicationModal'));
+            const detailsDiv = document.getElementById('applicationDetails');
+            
+            // Show modal and loading state
+            modal.show();
+            detailsDiv.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading application details...</p>
+                </div>
+            `;
+
+            // Fetch application details
+            fetch(`/api/applications/${applicationId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.application) {
+                        detailsDiv.innerHTML = formatApplicationDetails(data.application);
+                    } else {
+                        detailsDiv.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                ${data.error || 'Failed to load application details'}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    detailsDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            Error loading application details: ${error.message}
+                        </div>
+                    `;
+                });
+        }
+
+        function approveApplication(applicationId) {
+            if (!confirm('Are you sure you want to approve this application?')) {
+                return;
+            }
+            
+            updateApplicationStatus(applicationId, 'approved');
+        }
+
+        function rejectApplication(applicationId) {
+            const remarks = prompt('Please provide a reason for rejection (optional):');
+            if (remarks === null) {
+                return; // User cancelled
+            }
+            
+            updateApplicationStatus(applicationId, 'rejected', remarks);
+        }
+
+        function updateApplicationStatus(applicationId, status, remarks = '') {
+            fetch(`/api/applications/${applicationId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: status,
+                    remarks: remarks
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    const messageArea = document.getElementById('messageArea') || createMessageArea();
+                    messageArea.innerHTML = `
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>Application ${status} successfully!
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    `;
+                    messageArea.style.display = 'block';
+                    
+                    // Reload applications to show updated status
+                    setTimeout(() => {
+                        loadApplications();
+                        messageArea.style.display = 'none';
+                    }, 1500);
+                } else {
+                    alert(`Error: ${data.error || 'Failed to update application status'}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(`Error updating application status: ${error.message}`);
+            });
+        }
+
+        function createMessageArea() {
+            const messageArea = document.createElement('div');
+            messageArea.id = 'messageArea';
+            messageArea.className = 'mt-3';
+            messageArea.style.display = 'none';
+            const cardBody = document.querySelector('.card-body');
+            cardBody.insertBefore(messageArea, cardBody.firstChild);
+            return messageArea;
+        }
+
+        function deleteApplication(applicationId) {
+            if (!confirm('Are you sure you want to delete this application? This action cannot be undone.')) {
+                return;
+            }
+            
+            fetch(`/api/applications/${applicationId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    const messageArea = document.getElementById('messageArea') || createMessageArea();
+                    messageArea.innerHTML = `
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>Application deleted successfully!
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    `;
+                    messageArea.style.display = 'block';
+                    
+                    // Reload applications to show updated list
+                    setTimeout(() => {
+                        loadApplications();
+                        messageArea.style.display = 'none';
+                    }, 1500);
+                } else {
+                    alert(`Error: ${data.error || 'Failed to delete application'}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(`Error deleting application: ${error.message}`);
+            });
+        }
+
+        document.getElementById('filterType').addEventListener('change', loadApplications);
+        loadApplications();
+    </script>
+</body>
+</html>
+
